@@ -38,6 +38,17 @@ app.get("/list", (req, res) => {
     res.send(result);
   });
 });
+// detail page 보기(view)
+app.get("/view", (req, res) => {
+  // console.log(req.query);
+  const id = req.query.id;
+  const sqlQuery =
+    "SELECT title, content, writer, DATE_FORMAT(date, '%Y-%m-%d') AS date FROM board where id=?;";
+  db.query(sqlQuery, [id], (err, result) => {
+    if (err) throw err;
+    res.send(result);
+  });
+});
 // create
 app.post("/write", (req, res) => {
   console.log(req.body);
@@ -48,6 +59,7 @@ app.post("/write", (req, res) => {
     res.send(result);
   });
 });
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
