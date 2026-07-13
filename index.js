@@ -53,13 +53,22 @@ app.get("/view", (req, res) => {
 app.post("/write", (req, res) => {
   console.log(req.body);
   const { title, name, content } = req.body;
-  const sqlQuery = "insert into board (title, content, writer) values (?,?,?);";
+  const sqlQuery = "INSERT INTO board (title, content, writer) values (?,?,?);";
   db.query(sqlQuery, [title, content, name], (err, result) => {
     if (err) throw err;
     res.send(result);
   });
 });
-
+// update
+app.post("/update", (req, res) => {
+  console.log(req.body);
+  const { name, title, content, id } = req.body;
+  const sqlQuery = "UPDATE board SET writer=?, title=?, content=? where id=?;";
+  db.query(sqlQuery, [name, title, content, id], (err, result) => {
+    if (err) throw err;
+    res.send(result);
+  });
+});
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
