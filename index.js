@@ -79,6 +79,16 @@ app.post("/delete", (req, res) => {
     res.send(result);
   });
 });
+// deleteSelect
+app.post("/deleteselect", (req, res) => {
+  console.log(req.body);
+  const { boardIdList } = req.body;
+  const sqlQuery = `DELETE FROM board where id in (${boardIdList})`;
+  db.query(sqlQuery, (err, result) => {
+    if (err) throw err;
+    res.send(result);
+  });
+});
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
