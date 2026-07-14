@@ -69,6 +69,16 @@ app.post("/update", (req, res) => {
     res.send(result);
   });
 });
+// delete
+app.post("/delete", (req, res) => {
+  console.log(req.body);
+  const { id } = req.body;
+  const sqlQuery = "DELETE FROM board where id=?;";
+  db.query(sqlQuery, [id], (err, result) => {
+    if (err) throw err;
+    res.send(result);
+  });
+});
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
