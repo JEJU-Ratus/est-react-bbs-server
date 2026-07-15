@@ -5,6 +5,8 @@ const mysql = require("mysql2");
 const dotenv = require("dotenv");
 const port = 3000;
 const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // json -> object
@@ -41,6 +43,18 @@ const db = mysql.createConnection({
 });
 
 db.connect();
+
+function deleteUploadedFile(filePath) {
+  if (!filePath) return;
+  const absolutePath = path.resolve(filePath); // 삭제할 파일의 절대 경로 확인
+  console.log(absolutePath);
+  if (fs.existsSync(absolutePath)) {
+    // 실제 서버에 파일이 있는지 확인
+    console.log(absolutePath);
+    fs.unlinkSync(absolutePath);
+  }
+}
+
 // get요청 주소에 따른 출력 (read에 가까운)
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -76,11 +90,29 @@ app.post("/write", upload.single("image"), (req, res) => {
   });
 });
 // update
-app.post("/update", (req, res) => {
+app.post("/update", upload.single("image"), (req, res) => {
   console.log(req.body);
-  const { name, title, content, id } = req.body;
-  const sqlQuery = "UPDATE board SET writer=?, title=?, content=? where id=?;";
-  db.query(sqlQuery, [name, title, content, id], (err, result) => {
+  const { writer, title, content, id, remove_image } = req.body;
+  const imagePath = req.file ? req.file.path : null; // 새 이미지 정보 할당.
+  let sqlQuery;
+  let params;
+  // 상황별 sqlQuery와 params 정의
+  const shouldRemoveImage = remove_image === "1"; // 값이 1->true일때.
+
+  if (shouldRemoveImage && !imagePath) {
+    // 이미지 삭제 요청 O + 새 이미지 X
+    sqlQuery = "UPDATE board SET writer=?, title=?, content=?, image_path=NULL where id=?;";
+    params = [writer, title, content, id];
+  } else if (imagePath) {
+    // 이미지 삭제 요청 X + 새 이미지 O
+    sqlQuery = "UPDATE board SET writer=?, title=?, content=?, image_path=? where id=?;";
+    params = [writer, title, content, imagePath, id];
+  } else {
+    // 이미지 삭제 요청 X + 새 이미지 X
+    sqlQuery = "UPDATE board SET writer=?, title=?, content=? where id=?;";
+    params = [writer, title, content, id];
+  }
+  db.query(sqlQuery, params, (err, result) => {
     if (err) throw err;
     res.send(result);
   });
@@ -89,6 +121,13 @@ app.post("/update", (req, res) => {
 app.post("/delete", (req, res) => {
   console.log(req.body);
   const { id } = req.body;
+  // 삭제할 이미지의 경로 파악
+
+  db.query("SELECT image_path FROM board WHERE id = ?", [id], (err, result) => {
+    if (err) throw err;
+    const existingImagePath = result[0] ? result[0].image_path : null;
+    deleteUploadedFile(existingImagePath);
+  });
   const sqlQuery = "DELETE FROM board where id=?;";
   db.query(sqlQuery, [id], (err, result) => {
     if (err) throw err;
