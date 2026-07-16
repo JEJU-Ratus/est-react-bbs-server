@@ -3,14 +3,16 @@ const cors = require("cors");
 const app = express();
 const mysql = require("mysql2");
 const dotenv = require("dotenv");
-const port = 3000;
+const port = precess.env.PORT || 3000;
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // json -> object
-app.use("/uploads", express.static("uploads")); // uploads 폴더 접근 권한
+// app.use("/uploads", express.static("uploads")); // uploads 폴더 접근 권한
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // uploads 폴더 절대 경로로 접근 권한 부여
+
 // cors 허용
 let corsOptions = {
   origin: "*",
@@ -21,7 +23,7 @@ app.use(cors());
 // file 경로와 파일명
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/");
+    cb(null, path.join(__dirname, "uploads"));
   },
   filename: function (req, file, cb) {
     originExt = file.originalname.split(".")[1];
