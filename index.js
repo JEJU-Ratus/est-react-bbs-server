@@ -101,10 +101,20 @@ app.post("/update", upload.single("image"), (req, res) => {
 
   if (shouldRemoveImage && !imagePath) {
     // 이미지 삭제 요청 O + 새 이미지 X
+    db.query("SELECT image_path FROM board WHERE id = ?", [id], (err, result) => {
+      if (err) throw err;
+      const existingImagePath = result[0] ? result[0].image_path : null;
+      deleteUploadedFile(existingImagePath);
+    });
     sqlQuery = "UPDATE board SET writer=?, title=?, content=?, image_path=NULL where id=?;";
     params = [writer, title, content, id];
   } else if (imagePath) {
     // 이미지 삭제 요청 X + 새 이미지 O
+    db.query("SELECT image_path FROM board WHERE id = ?", [id], (err, result) => {
+      if (err) throw err;
+      const existingImagePath = result[0] ? result[0].image_path : null;
+      deleteUploadedFile(existingImagePath);
+    });
     sqlQuery = "UPDATE board SET writer=?, title=?, content=?, image_path=? where id=?;";
     params = [writer, title, content, imagePath, id];
   } else {
@@ -138,6 +148,18 @@ app.post("/delete", (req, res) => {
 app.post("/deleteselect", (req, res) => {
   console.log(req.body);
   const { boardIdList } = req.body;
+  // 서버에서 여러 이미지 삭제
+  db.query(`SELECT image_path FROM board WHERE id in (${boardIdList})`, (err, result) => {
+    if (err) throw err;
+    if (result && result.length > 0) {
+      result.forEach(item => {
+        deleteUploadedFile(item.image_path);
+      });
+    }
+    // const existingImagePath = result[0] ? result[0].image_path : null;
+    // deleteUploadedFile(existingImagePath);
+  });
+  //db 테이블에서 글 여러개 삭제
   const sqlQuery = `DELETE FROM board where id in (${boardIdList})`;
   db.query(sqlQuery, (err, result) => {
     if (err) throw err;
